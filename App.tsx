@@ -1,12 +1,14 @@
 import "./global.css"
-import { Text, View } from "react-native";
- 
-export default function App() {
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import TabNavigator from "~/navigation/TabNavigator";
+
+function App(): React.JSX.Element {
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-xl font-bold text-blue-500">
-        Welcome to Nativewind!
-      </Text>
-    </View>
+    <NavigationContainer>
+      <TabNavigator />
+    </NavigationContainer>
   );
 }
+
+export default App;
