@@ -21,7 +21,9 @@ export default function TabNavigator() {
   
   return (
     <Tab.Navigator
-  screenOptions={({ route }) => ({
+    initialRouteName="HomePage"
+
+    screenOptions={({ route }) => ({
     headerShown: false,
     tabBarLabelStyle: {
       fontSize: 14,
