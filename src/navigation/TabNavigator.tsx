@@ -1,5 +1,10 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Foundation from '@expo/vector-icons/Foundation';
 
 import LocationPage from '~/screens/LocationPage';
 import PharmacyPage from '~/screens/PharmacyPage';
@@ -10,49 +15,80 @@ import MyPage from '~/screens/MyPage';
 
 const Tab = createBottomTabNavigator();
 
+
+
 export default function TabNavigator() {
+  
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarLabelStyle: { fontSize: 12 },
-        tabBarActiveTintColor: '#007aff',
-        tabBarInactiveTintColor: 'gray',
-        tabBarIcon: () => null,
-      }}>
+  screenOptions={({ route }) => ({
+    headerShown: false,
+    tabBarLabelStyle: {
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    tabBarActiveTintColor: '#007aff', // 파란색
+    tabBarInactiveTintColor: 'black', // 회색 대신 검정
+    tabBarStyle: {
+      height: 80,
+      paddingBottom: 10,
+      paddingTop: 5,
+    },
+    tabBarItemStyle: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    tabBarIcon: ({ color, size }) => {
+  size = 30;
+
+  const iconMap = {
+    HomePage: <Foundation name="home" size={size} color={color} />,
+    Pharmacy: <MaterialIcons name="local-hospital" size={size} color={color} />,
+    Emergency: <MaterialCommunityIcons name="alarm-light" size={size} color={color} />,
+    Location: <Ionicons name="location-sharp" size={size} color={color} />,
+    MyPage: <Ionicons name="person-sharp" size={size} color={color} />,
+  };
+
+  return iconMap[route.name as keyof typeof iconMap] || null;
+},
+  })}
+>
+
+
+        
       <Tab.Screen
         name="Location"
         component={LocationPage}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: '위치',
         }}
       />
       <Tab.Screen
         name="Pharmacy"
         component={PharmacyPage}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: '약국',
         }}
       />
       <Tab.Screen
-        name="MyPage"
+        name="HomePage"
         component={HomePage}
         options={{
-          tabBarLabel: 'MyPage',
+          tabBarLabel: '홈',
         }}
       />
       <Tab.Screen
         name="Emergency"
         component={EmergencyPage}
         options={{
-          tabBarLabel: 'Home',
+          tabBarLabel: '응급',
         }}
       />
       <Tab.Screen
-        name="Capsule"
+        name="MyPage"
         component={MyPage}
         options={{
-          tabBarLabel: 'Capsule',
+          tabBarLabel: 'MY',
         }}
       />
       
