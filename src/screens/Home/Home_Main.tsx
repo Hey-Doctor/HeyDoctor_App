@@ -55,7 +55,7 @@ export default function Home_Main() {
   };
 
   return (
-    <View className="w-[351px] h-[358px] bg-default-color rounded-2xl relative">
+    <View className="w-[351px] h-[358px] bg-default-color shadow-custom rounded-2xl relative">
       {/* 인삿말 */}
       <Text className="absolute top-[61px] left-[16px] text-[17px] font-bold text-neutral-950">
         김곰돌님,
@@ -91,7 +91,7 @@ export default function Home_Main() {
       <Text className="absolute top-[225px] left-[17px] text-[24px] font-bold">{dongGu}</Text>
 
       {/* 병원 확인 버튼 */}
-      <TouchableOpacity className="absolute top-[283px] left-[17px] w-[315px] h-[52px] rounded-lg bg-component-color justify-center">
+      <TouchableOpacity className="absolute top-[283px] left-[17px] w-[315px] h-[52px] rounded-lg bg-component-color shadow-custom justify-center">
         <View className="flex-row items-center justify-center">
           <Image
             source={require('../../../assets/mascot_icon.png')}
