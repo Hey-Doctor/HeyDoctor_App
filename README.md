@@ -1,2 +1,14 @@
-# HeyDoctor_App
-React Native App for HeyDoctor service
+# 헤이닥터
+응급 관련 지원 앱 서비스
+
+## 📁 폴더 구조
+
+```
+📦 프로젝트 루트
+└── 📂 src
+    ├── 📂 assets            # 정적 리소드
+    ├── 📂 component         # 자주 사용하는 컴포넌트
+    └── 📂 screens           # 화면 목록
+        ├── 📂 Home          # 홈 페이지
+        └── 📂 Location      # 위치 페이지
+```
