@@ -2,19 +2,19 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
+// 아이콘
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Foundation from '@expo/vector-icons/Foundation';
 
-import LocationPage from '~/screens/LocationPage';
-import PharmacyPage from '~/screens/PharmacyPage';
-import HomePage from '~/screens/HomePage';
-import EmergencyPage from '~/screens/EmergencyPage';
-import MyPage from '~/screens/MyPage';
-
+// 네비게이션을 위한 import
+import LocationPage from '~/screens/Location/LocationPage';
+import PharmacyPage from '~/screens/Pharmacy/PharmacyPage';
+import HomePage from '~/screens/Home/HomePage';
+import EmergencyPage from '~/screens/Emergency/EmergencyPage';
+import MyPage from '~/screens/Mypage/MyPage';
 
 const Tab = createBottomTabNavigator();
-
 
 
 export default function TabNavigator() {
@@ -55,9 +55,9 @@ export default function TabNavigator() {
 },
   })}
 >
+{/* Tab.Navigator 시작 태그 종료 지점 */}
 
 
-        
       <Tab.Screen
         name="Location"
         component={LocationPage}
