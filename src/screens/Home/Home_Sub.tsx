@@ -9,7 +9,7 @@ export default function Home_Sub() {
         className="absolute top-[18px] left-[15px] bg-white w-[113px] h-[43px] rounded-[20px] shadow-custom flex-row items-center justify-center gap-[6px]"
       >
         <Image
-          source={require('../../../assets/heart.png')}
+          source={require('../../assets/heart.png')}
           className="w-[20px] h-[20px]"
         />
         <Text className="font-bold text-[13px]">심장 충격기</Text>
@@ -20,7 +20,7 @@ export default function Home_Sub() {
         className="absolute top-[18px] left-[142px] bg-white w-[84px] h-[43px] rounded-[20px] shadow-custom flex-row items-center justify-center gap-[6px]"
       >
         <Image
-          source={require('../../../assets/medicine.png')}
+          source={require('../../assets/medicine.png')}
           className="w-[20px] h-[20px]"
         />
         <Text className="font-bold text-[13px]">약국</Text>
@@ -31,7 +31,7 @@ export default function Home_Sub() {
         className="absolute top-[18px] left-[241px] bg-white w-[90px] h-[43px] rounded-[20px] shadow-custom flex-row items-center justify-center gap-[6px]"
       >
         <Image
-          source={require('../../../assets/shelter.png')}
+          source={require('../../assets/shelter.png')}
           className="w-[20px] h-[20px]"
         />
         <Text className="font-bold text-[13px]">대피소</Text>
@@ -43,7 +43,7 @@ export default function Home_Sub() {
       >
         <View className="flex-row items-center justify-center">
           <Image
-            source={require('../../../assets/mascot_icon.png')}
+            source={require('../../assets/mascot_icon.png')}
             className="w-[35px] h-[35px] mr-[8px]"
           />
           <Text className="text-white text-base font-bold">

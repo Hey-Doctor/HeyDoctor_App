@@ -66,7 +66,7 @@ export default function Home_Main() {
 
       {/* 마스코트 이미지 */}
       <Image
-        source={require('../../../assets/mascot.png')}
+        source={require('../../assets/mascot.png')}
         className="absolute w-[227px] h-[227px] top-[42px] left-[143px]"
       />
 
@@ -81,7 +81,7 @@ export default function Home_Main() {
         onPress={getLocation}
       >
         <Image
-          source={require('../../../assets/refresh.png')}
+          source={require('../../assets/refresh.png')}
           className="w-[15px] h-[15px] tint-black"
         />
       </TouchableOpacity>
@@ -94,7 +94,7 @@ export default function Home_Main() {
       <TouchableOpacity className="absolute top-[283px] left-[17px] w-[315px] h-[52px] rounded-lg bg-component-color shadow-custom justify-center">
         <View className="flex-row items-center justify-center">
           <Image
-            source={require('../../../assets/mascot_icon.png')}
+            source={require('../../assets/mascot_icon.png')}
             className="w-[35px] h-[35px] mr-2"
           />
           <Text className="text-white text-base font-bold">가까운 병원 확인하기</Text>

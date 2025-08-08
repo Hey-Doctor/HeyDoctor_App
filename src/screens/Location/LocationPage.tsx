@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ActivityIndicator, Dimensions, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import KakaoMap from '~/components/KakaoMap';
 import BottomSheet, { BottomSheetState } from '~/components/BottomSheet';
@@ -56,7 +56,26 @@ export default function LocationPage() {
           initialState="collapsed"
           onStateChange={handleBottomSheetStateChange}
         >
-          <View className="p-6">
+          <View className="flex flex-col p-4 gap-8 border border-gray-400">
+            {/* 안전 문자 내용 칸 */}
+            <View className='w-full p-[10px] gap-3 elevation-md bg-[#F1FAF1] rounded-2xl'>
+                {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
+                <View className='flex flex-row items-center gap-3'>
+                    <Image source={require('~/assets/screens/LocationPageAssets/informButton.png')} />
+                    <Text className='text-xl font-semibold'>안전 문자 내용</Text>
+                </View>    
+                <Text>Json으로 받아서 뿌리면 될듯</Text>
+            </View>
+            {/* 안전 문자 내용 칸 END */}
+
+            <View className='w-full p-[10px] gap-3 elevation-md bg-[#E6EEFF] rounded-2xl'>
+                {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
+                <View className='flex flex-row items-center gap-3'>
+                    <Text className='text-xl'>안전 문자 내용</Text>
+                </View>    
+                <Text>Json으로 받아서 뿌리면 될듯</Text>
+            </View>
+
             <Text className="text-center text-gray-700">
               바텀시트 콘텐츠 영역 ddd
             </Text>

@@ -10,7 +10,7 @@ import Foundation from '@expo/vector-icons/Foundation';
 // 네비게이션을 위한 import
 import LocationPage from '~/screens/Location/LocationPage';
 import PharmacyPage from '~/screens/Pharmacy/PharmacyPage';
-import HomePage from '~/screens/Home/HomePage';
+import HomePage from '~/screens/Home/Home';
 import EmergencyPage from '~/screens/Emergency/EmergencyPage';
 import MyPage from '~/screens/Mypage/MyPage';
 
