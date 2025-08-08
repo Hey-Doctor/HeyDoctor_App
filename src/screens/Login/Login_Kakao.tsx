@@ -1,7 +1,10 @@
-import { TouchableOpacity, Text, Image } from 'react-native';
-
+import { TouchableOpacity, Text, Image, Linking } from 'react-native';
 export default function Login_Kakao() {
-  const handleLogin = () => { /* 카카오 로그인 로직 */ };
+  const handleLogin = async () => { 
+    console.log("카카오 클릭!!");
+    const authUrl = 'http://localhost:8080/oauth2/authorization/kakao';
+    await Linking.openURL(authUrl);
+  };
 
   return (
     <TouchableOpacity 
