@@ -1,11 +1,14 @@
 import "./global.css"
-import { Text, View } from "react-native";
-import Home from "~/screens/Home/Home";
- 
-export default function App() {
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import TabNavigator from "~/navigation/TabNavigator";
+
+function App(): React.JSX.Element {
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Home />
-    </View>
+    <NavigationContainer>
+      <TabNavigator />
+    </NavigationContainer>
   );
 }
+
+export default App;
