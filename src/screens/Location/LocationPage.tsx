@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ActivityIndicator, Dimensions, Image } from 'react-native';
+import { View, Text, ActivityIndicator, Dimensions, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import KakaoMap from '~/components/KakaoMap';
 import BottomSheet, { BottomSheetState } from '~/components/BottomSheet';
+import MapButton from './Location_components/MapButton';
+import { find } from 'eslint.config';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -10,6 +12,8 @@ export default function LocationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [bottomSheetState, setBottomSheetState] = useState<BottomSheetState>('collapsed');
+
+  const [findLocation, setFindLocation] = useState('');
 
   const handleMapLoaded = () => {
     console.log('Map loading completed');
@@ -51,12 +55,39 @@ export default function LocationPage() {
             onMapLoaded={handleMapLoaded}
           />
         )}
+        
+        {/* 검색 칸 */}
+        <View className="absolute w-full top-4 pointer-events-auto">
+            <View className='flex-row justify-around'>
+                <View className='flex flex-row  items-center gap-1 p-2 px-10 bg-white rounded-full elevation-xl'>
+                    <Image source={require('~/assets/screens/LocationPageAssets/LocationFindIcon.png')} 
+                        className='w-[25px] h-[25px]' />
+                    <TextInput
+                        placeholder="무엇을 찾으세요?"
+                        value={findLocation}
+                        onChangeText={setFindLocation}
+                    />
+                </View>
+            </View>
+        </View>
 
+
+        {/* 지도 버튼들 */}
+        <View className="absolute w-full top-24 pointer-events-auto">
+            <View className='flex-row justify-around px-4'>
+                <MapButton text='심장 충격기' imageSource={require('~/assets/screens/LocationPageAssets/HeartIcon.png')}/>
+                <MapButton text='병원' imageSource={require('~/assets/screens/LocationPageAssets/HospitalIcon.png')}/>
+                <MapButton text='약국' imageSource={require('~/assets/screens/LocationPageAssets/PillIcon.png')}/>
+                <MapButton text='대피소' imageSource={require('~/assets/screens/LocationPageAssets/HomeIconPink.png')}/>
+            </View>
+        </View>
+
+        {/* 바텀시트 */}
         <BottomSheet
           initialState="collapsed"
           onStateChange={handleBottomSheetStateChange}
         >
-          <View className="flex flex-col p-4 gap-8 border border-gray-400">
+          <View className="flex flex-col p-4 gap-8">
             {/* 안전 문자 내용 칸 */}
             <View className='w-full p-[10px] gap-3 elevation-md bg-[#F1FAF1] rounded-2xl'>
                 {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
