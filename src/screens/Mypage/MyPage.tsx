@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '~/auth/AuthContext';
-import MyPage_Menu from './MyPage_Menu';
 import MyPage_Login from './MyPage_Login';
 import MyPage_Logout from './MyPage_Logout';
 
