@@ -1,12 +1,17 @@
 import "./global.css"
-import { Text, View } from "react-native";
-import Home from "~/screens/Home/Home";
-import Login from "~/screens/Login/Login";
- 
-export default function App() {
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import TabNavigator from "~/navigation/TabNavigator";
+import { AuthProvider } from "~/auth/AuthContext";
+
+function App(): React.JSX.Element {
   return (
-    <View className="flex-1 items-center justify-center bg-white">
-      <Login />
-    </View>
+    <AuthProvider>
+      <NavigationContainer>
+        <TabNavigator />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
+
+export default App;
