@@ -27,7 +27,7 @@ export default function Home() {
       <Home_Sub />
 
       <NavButton 
-        destination='Pharmacy'
+        destination='AiquestionPage'
         className='w-[70px] h-[70px] absolute bottom-3 right-3'
         >
         <Image 

@@ -10,6 +10,7 @@ import PharmacyPage from '~/screens/Pharmacy/PharmacyPage';
 import HomePage from '~/screens/Home/Home';
 import EmergencyPage from '~/screens/Emergency/EmergencyPage';
 import MyPage from '~/screens/Mypage/MyPage';
+import AiquestionPage from '~/screens/AIQuestion/AIQuestionPage';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -18,6 +19,7 @@ export type RootStackParamList = {
   HomePage: undefined;
   Emergency: undefined;
   MyPage: undefined;
+  AiquestionPage: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -56,6 +58,11 @@ function App(): React.JSX.Element {
             name="MyPage"
             component={MyPage}
             options={{ title: 'MY' }}
+          />
+          <Stack.Screen
+            name="AiquestionPage"
+            component={AiquestionPage}
+            options={{ title: 'AI 질문' }}
           />
         </Stack.Navigator>
       </NavigationContainer>

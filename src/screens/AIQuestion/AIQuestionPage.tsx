@@ -1,1 +1,6 @@
-export default function AiquestionButton() {}
+export default function AIQuestionPage() {
+    return (
+        <> 
+        </>
+    );
+}
