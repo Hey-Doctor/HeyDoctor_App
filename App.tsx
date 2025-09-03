@@ -4,6 +4,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import TabNavigator from "~/navigation/TabNavigator";
+import { AuthProvider } from "~/auth/AuthContext";
 
 import LocationPage from '~/screens/Location/LocationPage';
 import PharmacyPage from '~/screens/Pharmacy/PharmacyPage';
@@ -26,6 +27,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App(): React.JSX.Element {
   return (
+    <AuthProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="MainTabs">
@@ -67,6 +69,7 @@ function App(): React.JSX.Element {
         </Stack.Navigator>
       </NavigationContainer>
     </GestureHandlerRootView>
+    </AuthProvider>
   );
 }
 
