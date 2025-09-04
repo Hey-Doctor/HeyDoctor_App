@@ -11,7 +11,7 @@ export default function EmergencyInfo() {
                 >
                     <MaterialIcons name="chevron-right" size={50} className='absolute top-2 right-0'/>
                     <Image
-                        source={require('../../../assets/info.png')}
+                        source={require('../../assets/info.png')}
                         className="w-[50px] h-[50px]"
                     />
                     <Text className='text-[20px] font-bold'>응급 처치 정보</Text>

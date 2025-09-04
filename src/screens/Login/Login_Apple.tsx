@@ -9,7 +9,7 @@ export default function Login_Apple() {
         className="bg-black w-[271px] h-[39px] rounded-[5px] justify-center"
     >
         <Image
-            source={require('../../../assets/apple.png')}
+            source={require('../../assets/apple.png')}
             className="absolute left-4 w-[16px] h-[20px]"
             />
         <Text

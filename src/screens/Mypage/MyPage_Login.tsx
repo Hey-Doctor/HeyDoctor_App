@@ -17,7 +17,7 @@ export default function MyPage_Login() {
             className="bg-white shadow-custom p-4 rounded-[15px] w-[345px] h-[137px] relative"
           >
             <Image
-              source={require('../../../assets/profile.jpeg')}
+              source={require('../../assets/profile.jpeg')}
               className="w-[125px] h-[125px] rounded-full absolute left-[8px] top-[6px]"
             />
             <Text className="text-black text-[17px] font-bold absolute left-[148px] top-[47px]">
@@ -41,7 +41,7 @@ export default function MyPage_Login() {
             onPress={logout}
           >
             <Image
-              source={require('../../../assets/mascot_icon.png')}
+              source={require('../../assets/mascot_icon.png')}
               className="w-[20px] h-[20px] mr-2"
             />
             <Text className="text-white font-semibold">로그아웃</Text>

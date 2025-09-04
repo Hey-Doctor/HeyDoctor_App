@@ -6,7 +6,7 @@ export default function Login_ContentSection() {
             className="my-[69px]"
         >
             <Image
-                source={require('../../../assets/heyDoctor_mainLogo.png')}
+                source={require('../../assets/heyDoctor_mainLogo.png')}
                 className="w-[276px] h-[276px]"
             />
             <Text
@@ -16,7 +16,7 @@ export default function Login_ContentSection() {
             <View 
                 className="flex-row items-center justify-center space-x-5 my-[16px]">
                 <Image
-                source={require('../../../assets/login_lightning.png')}
+                source={require('../../assets/login_lightning.png')}
                 className="w-[12px] h-[22px]"
                 />
                 <Text

@@ -9,7 +9,7 @@ export default function Login_Naver() {
         className="bg-green-500 w-[271px] h-[39px] rounded-[5px] justify-center"
     >
         <Image
-            source={require('../../../assets/naver.png')}
+            source={require('../../assets/naver.png')}
             className="absolute left-4 w-[11px] h-[12px]"
             />
         <Text
