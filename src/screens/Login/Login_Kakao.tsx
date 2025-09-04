@@ -12,7 +12,7 @@ export default function Login_Kakao() {
         className="bg-yellow-400 w-[271px] h-[39px] rounded-[5px] justify-center"
     >
         <Image
-            source={require('../../../assets/kakao.png')}
+            source={require('../../assets/kakao.png')}
             className="absolute left-4 w-[17px] h-[15px]"
             />
         <Text

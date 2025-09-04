@@ -11,7 +11,7 @@ export default function EmergencyPatient() {
                 >
                     <MaterialIcons name="chevron-right" size={50} className='absolute top-2 right-0'/>
                     <Image
-                        source={require('../../../assets/heart.png')}
+                        source={require('../../assets/heart.png')}
                         className="w-[50px] h-[50px]"
                     />
                     <Text className='text-[20px] font-bold'>위급 환자 발생</Text>
