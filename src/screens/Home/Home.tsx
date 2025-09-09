@@ -5,8 +5,8 @@ import Home_Sub from './Home_Sub';
 import { NavButton } from '~/components/NavButton';
 
 export default function Home() {
-  return (<>
-  <View className='flex-1 flex-col justify-center gap-4 p-7'>
+  return (
+  <View className='flex-1 flex-col justify-center gap-4 p-3'>
     {/* 맨 위에 칸 */}
     <View className='w-[351px] h-[75px] p-4 flex-row items-center justify-between bg-[#F1FAF1] rounded-2xl'>
       <Image 
@@ -36,6 +36,5 @@ export default function Home() {
       </NavButton>
 
     </View>
-    </>
   );
 }

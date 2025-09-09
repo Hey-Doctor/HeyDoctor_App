@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, Dimensions, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Location from 'expo-location'; // watchPositionAsync를 쓰려면 직접 import 필요
 import KakaoMap from '~/components/KakaoMap';
 import BottomSheet, { BottomSheetState } from '~/components/BottomSheet';
 
 import MapButton from './Location_components/MapButton';
 import SafetyAlertMessage from './Location_components/SafetyAlertMessage';
-import { find } from 'eslint.config';
+import getLocationPermission, { LocationType } from '~/hooks/getLocationPermission';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -14,8 +15,40 @@ export default function LocationPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [bottomSheetState, setBottomSheetState] = useState<BottomSheetState>('collapsed');
-
+  const [mylocation, setMylocation] = useState<LocationType>(null);
   const [findLocation, setFindLocation] = useState('');
+
+  useEffect(() => {
+    let subscription: Location.LocationSubscription | null = null;
+
+    (async () => {
+      const loc = await getLocationPermission();
+      if (loc) {
+        setMylocation(loc);
+        console.log('현재 내 위치:', loc);
+
+        // 위치를 주기적으로 갱신
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Highest,
+            timeInterval: 3000, // 5초마다 갱신
+            distanceInterval: 1, // 1m 이상 이동했을 때만 갱신
+          },
+          (newLocation) => {
+            const { latitude, longitude } = newLocation.coords;
+            setMylocation({ latitude, longitude });
+            console.log('갱신된 위치:', latitude, longitude);
+          }
+        );
+      }
+    })();
+
+    return () => {
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   const handleMapLoaded = () => {
     console.log('Map loading completed');
@@ -30,7 +63,6 @@ export default function LocationPage() {
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <View className="flex-1">
-        
         {isLoading && (
           <View className="absolute inset-0 z-10 bg-white bg-opacity-80 justify-center items-center">
             <ActivityIndicator size="large" color="#0000ff" />
@@ -49,10 +81,11 @@ export default function LocationPage() {
           </View>
         )}
 
+        {/* 지도 구현 부분 (카카오맵) */}
         {!hasError && (
           <KakaoMap
-            latitude={37.5665}
-            longitude={126.978}
+            latitude={mylocation?.latitude ?? 37.5665}
+            longitude={mylocation?.longitude ?? 126.9780}
             className="flex-1 overflow-hidden"
             onMapLoaded={handleMapLoaded}
           />
@@ -60,28 +93,29 @@ export default function LocationPage() {
         
         {/* 검색 칸 */}
         <View className="absolute w-full top-4 pointer-events-auto">
-            <View className='flex-row justify-around'>
-                <View className='flex flex-row  items-center gap-1 p-2 px-10 bg-white rounded-full elevation-xl'>
-                    <Image source={require('~/assets/screens/LocationPageAssets/LocationFindIcon.png')} 
-                        className='w-[25px] h-[25px]' />
-                    <TextInput
-                        placeholder="무엇을 찾으세요?"
-                        value={findLocation}
-                        onChangeText={setFindLocation}
-                    />
-                </View>
+          <View className='flex-row justify-around'>
+            <View className='flex flex-row items-center gap-1 p-2 px-10 bg-white rounded-full elevation-xl'>
+              <Image 
+                source={require('~/assets/screens/LocationPageAssets/LocationFindIcon.png')} 
+                className='w-[25px] h-[25px]' 
+              />
+              <TextInput
+                placeholder="무엇을 찾으세요?"
+                value={findLocation}
+                onChangeText={setFindLocation}
+              />
             </View>
+          </View>
         </View>
-
 
         {/* 지도 버튼들 */}
         <View className="absolute w-full top-24 pointer-events-auto">
-            <View className='flex-row justify-around px-4'>
-                <MapButton text='심장 충격기' imageSource={require('~/assets/screens/LocationPageAssets/HeartIcon.png')}/>
-                <MapButton text='병원' imageSource={require('~/assets/screens/LocationPageAssets/HospitalIcon.png')}/>
-                <MapButton text='약국' imageSource={require('~/assets/screens/LocationPageAssets/PillIcon.png')}/>
-                <MapButton text='대피소' imageSource={require('~/assets/screens/LocationPageAssets/HomeIconPink.png')}/>
-            </View>
+          <View className='flex-row justify-around px-4'>
+            <MapButton text='심장 충격기' imageSource={require('~/assets/screens/LocationPageAssets/HeartIcon.png')}/>
+            <MapButton text='병원' imageSource={require('~/assets/screens/LocationPageAssets/HospitalIcon.png')}/>
+            <MapButton text='약국' imageSource={require('~/assets/screens/LocationPageAssets/PillIcon.png')}/>
+            <MapButton text='대피소' imageSource={require('~/assets/screens/LocationPageAssets/HomeIconPink.png')}/>
+          </View>
         </View>
 
         {/* 바텀시트 */}
@@ -90,14 +124,12 @@ export default function LocationPage() {
           onStateChange={handleBottomSheetStateChange}
         >
           <View className="flex flex-col p-4 gap-8">
-            {/* 안전 문자 내용 칸 */}
             <SafetyAlertMessage />
 
             <View className='w-full p-[10px] gap-3 elevation-md bg-[#E6EEFF] rounded-2xl'>
-            {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
-            <View className='flex flex-row items-center gap-3'>
+              <View className='flex flex-row items-center gap-3'>
                 <Text className='text-xl'>안전 문자 내용</Text>
-            </View>    
+              </View>    
               <Text>Json으로 받아서 뿌리면 될듯</Text>
             </View>
 

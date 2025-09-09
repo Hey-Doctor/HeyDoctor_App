@@ -17,7 +17,7 @@
     "@react-navigation/native-stack": "^7.3.25",
     "babel-plugin-dotenv-import": "^3.0.1",
     "expo": "^53.0.15",
-    "expo-location": "^18.1.6",
+    "expo-location": "~18.1.6",
     "@react-native-seoul/naver-login": "^4.2.0",
     "expo-status-bar": "~2.2.3",
     "nativewind": "latest",

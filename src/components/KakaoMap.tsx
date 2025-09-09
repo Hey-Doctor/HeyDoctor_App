@@ -1,8 +1,10 @@
 // KakaoMap.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { KAKAO_MAP_JS_KEY } from '@env';
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
 
 type KakaoMapProps = {
   latitude: number;
@@ -19,154 +21,107 @@ export default function KakaoMap({
   webViewClassName,
   onMapLoaded,
 }: KakaoMapProps) {
-  
-  
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_JS_KEY}&libraries=services"></script>
-        <style>
-          body { 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh; 
-            width: 100vw;
-            overflow: hidden;
-          }
-          html { 
-            height: 100%; 
-            width: 100%;
-          }
-          #map { 
-            width: 100%; 
-            height: 100%; 
-            min-height: 200px;
-          }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script>
-          function initializeMap() {
-            try {
-              console.log('Initializing map...');
-              
-              if (typeof kakao === 'undefined') {
-                console.error('Kakao is not defined');
-                window.ReactNativeWebView?.postMessage('MAP_ERROR: Kakao not loaded');
-                return;
-              }
+  const [markerImages, setMarkerImages] = useState<{ [key: string]: string }>({});
 
-              if (!kakao.maps) {
-                console.error('Kakao maps is not available');
-                window.ReactNativeWebView?.postMessage('MAP_ERROR: Kakao maps not available');
-                return;
-              }
+  // 옵저버 위치 변수 (초기값)
+  let observeCoords = { observingLatitude: latitude, observingLongitude: longitude };
 
-              const mapContainer = document.getElementById('map');
-              if (!mapContainer) {
-                console.error('Map container not found');
-                window.ReactNativeWebView?.postMessage('MAP_ERROR: Container not found');
-                return;
-              }
+  useEffect(() => {
+    (async () => {
+      const images: { [key: string]: number } = {
+        MyLocationMarker: require('~/assets/screens/LocationPageAssets/MyLocationMarker01.png'),
+      };
 
-              const mapOption = {
-                center: new kakao.maps.LatLng(${latitude}, ${longitude}),
-                level: 3
-              };
+      const result: { [key: string]: string } = {};
 
-              console.log('Creating map with options:', mapOption);
-              
-              const map = new kakao.maps.Map(mapContainer, mapOption);
-              
-              const markerPosition = new kakao.maps.LatLng(${latitude}, ${longitude});
-              const marker = new kakao.maps.Marker({
-                position: markerPosition
-              });
-              
-              marker.setMap(map);
+      for (const key in images) {
+        const asset = Asset.fromModule(images[key]);
+        await asset.downloadAsync();
+        const base64 = await FileSystem.readAsStringAsync(asset.localUri!, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        result[key] = `data:image/png;base64,${base64}`;
+      }
 
-              console.log('Map initialized successfully');
-              window.ReactNativeWebView?.postMessage('MAP_LOADED');
-              
-            } catch (error) {
-              console.error('Map initialization error:', error);
-              window.ReactNativeWebView?.postMessage('MAP_ERROR: ' + error.message);
-            }
-          }
-
-          // 여러 방법으로 초기화 시도
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeMap);
-          } else {
-            // DOM이 이미 로드된 경우
-            if (typeof kakao !== 'undefined') {
-              initializeMap();
-            } else {
-              // Kakao 스크립트 로딩 대기
-              let attempts = 0;
-              const maxAttempts = 50;
-              const checkKakao = setInterval(() => {
-                attempts++;
-                if (typeof kakao !== 'undefined' && kakao.maps) {
-                  clearInterval(checkKakao);
-                  initializeMap();
-                } else if (attempts >= maxAttempts) {
-                  clearInterval(checkKakao);
-                  console.error('Kakao maps failed to load after maximum attempts');
-                  window.ReactNativeWebView?.postMessage('MAP_ERROR: Timeout loading Kakao');
-                }
-              }, 100);
-            }
-          }
-
-          // 윈도우 로드 이벤트도 추가
-          window.addEventListener('load', function() {
-            setTimeout(() => {
-              if (typeof kakao !== 'undefined' && kakao.maps) {
-                initializeMap();
-              }
-            }, 500);
-          });
-        </script>
-      </body>
-    </html>
-  `;
+      setMarkerImages(result); // markerImages 상태 업데이트
+    })();
+  }, []);
 
   return (
     <View className={className}>
-      <WebView
-        originWhitelist={['*']}
-        source={{ html: htmlContent }}
-        className={webViewClassName || 'flex-1'}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        scalesPageToFit={false}
-        scrollEnabled={false}
-        onLoad={() => {
-          console.log('WebView loaded successfully');
-        }}
-        onError={(e) => {
-          console.error('WebView error: ', e.nativeEvent);
-        }}
-        onMessage={(event) => {
-          const message = event.nativeEvent.data;
-          console.log('WebView message:', message);
-          
-          if (message === 'MAP_LOADED') {
-            console.log('지도 로딩 완료!');
-            onMapLoaded?.();
-          } else if (message.startsWith('MAP_ERROR:')) {
-            console.error('Map error:', message);
-          } else {
-            console.log('Other message:', message);
-          }
-        }}
-        onLoadStart={() => console.log('WebView load started')}
-        onLoadEnd={() => console.log('WebView load ended')}
-      />
+      {/* markerImages가 준비될 때만 WebView 렌더링 (수정) */}
+      {Object.keys(markerImages).length > 0 && (
+        <WebView
+          originWhitelist={['*']}
+          source={{
+            html: `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_JS_KEY}&libraries=services"></script>
+                  <style>
+                    body { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; }
+                    html { height: 100%; width: 100%; }
+                    #map { width: 100%; height: 100%; min-height: 200px; }
+                  </style>
+                </head>
+                <body>
+                  <div id="map"></div>
+                  <script>
+                    function initializeMap() {
+                      try {
+                        const mapContainer = document.getElementById('map');
+                        const mapOption = {
+                          center: new kakao.maps.LatLng(${observeCoords.observingLatitude}, ${observeCoords.observingLongitude}),
+                          level: 5
+                        };
+                        const map = new kakao.maps.Map(mapContainer, mapOption);
+
+                        const markerPosition = new kakao.maps.LatLng(${latitude}, ${longitude});
+                        const imageSize = new kakao.maps.Size(20, 20);
+                        const imageOption = { offset: new kakao.maps.Point(10, 20)};
+                        
+                        // React state에서 가져온 Base64 이미지를 직접 사용 (수정)
+                        const markerImage = new kakao.maps.MarkerImage("${markerImages['MyLocationMarker']}", imageSize, imageOption);
+
+                        const marker = new kakao.maps.Marker({
+                          position: markerPosition,
+                          image: markerImage
+                        });
+                        marker.setMap(map);
+
+                        window.ReactNativeWebView?.postMessage('MAP_LOADED');
+                      } catch (error) {
+                        window.ReactNativeWebView?.postMessage('MAP_ERROR: ' + error.message);
+                      }
+                    }
+
+                    if (document.readyState === 'loading') {
+                      document.addEventListener('DOMContentLoaded', initializeMap);
+                    } else {
+                      initializeMap();
+                    }
+                  </script>
+                </body>
+              </html>
+            `,
+          }}
+          className={webViewClassName || 'flex-1'}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          scalesPageToFit={false}
+          scrollEnabled={false}
+          onLoad={() => {}}
+          onError={(e) => {}}
+          onMessage={(event) => {
+            const message = event.nativeEvent.data;
+            if (message === 'MAP_LOADED') {
+              onMapLoaded?.();
+            }
+          }}
+        />
+      )}
     </View>
   );
 }
