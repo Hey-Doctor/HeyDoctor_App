@@ -1,68 +1,90 @@
-// pages/LocationPage.tsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// screens/Location/LocationPage.tsx
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { View, Text, ActivityIndicator, Pressable, InteractionManager } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Region } from 'react-native-maps';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { subscribeRibbonHeight, getRibbonHeight } from '~/utils/ribbonHeight';
 import NativeMap, { NativeMapHandle, MapMarker } from '~/components/NativeMap';
-import { haversineMeters } from '~/lib/geo';
 import * as Location from 'expo-location';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import SafetyAlertMessage from '../Location/Location_components/SafetyAlertMessage';
+import WeatherInfo from '~/components/WeatherInfo';
 
 /** ───────── 유틸 ───────── **/
 function debounce<T extends (...args:any)=>any>(fn:T, ms:number) {
-  let t:any;
-  return (...args:Parameters<T>) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-
-/** 목데이터 생성 (현재 중심 근처 무작위 마커) */
-function metersToDegrees(lat: number, meters: number) {
-  const latDeg = meters / 111_000;
-  const lonDeg = meters / (111_000 * Math.cos((lat * Math.PI) / 180));
-  return { latDeg, lonDeg };
+  let t:any; return (...args:Parameters<T>) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 async function fetchHospitalsNearMock(lat:number, lng:number, radiusMeters:number) {
-  await new Promise(res => setTimeout(res, 200)); // network delay 흉내
-  const count = 25;
-  const list: MapMarker[] = [];
-  for (let i = 0; i < count; i++) {
-    const r = Math.sqrt(Math.random()) * radiusMeters;
-    const theta = Math.random() * Math.PI * 2;
-    const dx = r * Math.cos(theta);
-    const dy = r * Math.sin(theta);
-    const { latDeg, lonDeg } = metersToDegrees(lat, 1);
-    list.push({
-      id: `mock-${i}`,
-      title: `가상 병원 ${i + 1}`,
-      coordinate: { latitude: lat + dy * latDeg, longitude: lng + dx * lonDeg },
-      address: '서울 어딘가',
-      tel: '02-123-4567',
-    });
-  }
+  await new Promise(res => setTimeout(res, 200));
+  const list: MapMarker[] = Array.from({length: 8}).map((_, i) => ({
+    id: `mock-${i}`,
+    title: `가상 병원 ${i + 1}`,
+    coordinate: { latitude: lat + (Math.random()-0.5)*0.01, longitude: lng + (Math.random()-0.5)*0.01 },
+    address: '서울 어딘가',
+    tel: '02-123-4567',
+  }));
   return list;
 }
+const haversine = (a:{lat:number; lng:number}, b:{lat:number; lng:number}) => {
+  const R=6371000, dLat=(b.lat-a.lat)*Math.PI/180, dLon=(b.lng-a.lng)*Math.PI/180;
+  const s1=Math.sin(dLat/2)**2, s2=Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s1+s2));
+};
 
-/** ───────── 페이지 ───────── **/
 export default function PharmacyPage() {
+  const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
+  const tabBarHeight = useBottomTabBarHeight();
+  const [ribbonHeight, setRibbonHeight] = useState(getRibbonHeight());
+
+  // 리본 높이 구독
+  useEffect(() => {
+    const unsub = subscribeRibbonHeight((h) => setRibbonHeight(h));
+    return unsub;
+  }, []);
+
   const [isLoading, setIsLoading] = useState(true);
+  const [mapMounted, setMapMounted] = useState(false);
   const [markers, setMarkers] = useState<MapMarker[]>([]);
-  const [center, setCenter] = useState({ latitude: 37.5665, longitude: 126.9780 }); // fallback: 서울시청
+  const [center, setCenter] = useState({ latitude: 37.5665, longitude: 126.9780 });
   const mapRef = useRef<NativeMapHandle>(null);
 
-  // 루프 차단용 ref들
+  // BottomSheet
+  const sheetRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ['18%', '46%'], []);
+  const presentedRef = useRef(false); // 중복 present 방지
+
+  // 이동 루프 방지
   const ignoreNextRef = useRef(false);
   const lastRegionRef = useRef<Region | null>(null);
   const lastFetchedRef = useRef<{lat:number; lng:number; zoom:number} | null>(null);
 
-  // 프로그램 이동 래퍼
-  const safePanTo = (lat:number, lng:number, zoomDelta=0.02) => {
-    ignoreNextRef.current = true;      // 다음 onRegionChangeComplete 무시
-    mapRef.current?.panTo(lat, lng, zoomDelta);
-  };
-  const safeFitToMarkers = () => {
-    ignoreNextRef.current = true;      // 다음 onRegionChangeComplete 무시
-    mapRef.current?.fitToMarkers();
-  };
+  const safeFitToMarkers = () => { ignoreNextRef.current = true; mapRef.current?.fitToMarkers(); };
 
-  // 현재 위치 확보(실패해도 fallback으로 진행)
+  const [weatherData, setWeatherData] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // 1. 현재 위치 정보(center)를 활용하여 URL 생성
+        const url = `http://192.168.219.144:8080/api/weather?lat=37.5665&lon=126.9780`;
+
+        const response = await fetch(url);
+        const json = await response.json();
+        setWeatherData(json);
+      } catch (error) {
+      }
+    };
+    
+    // 2. 위치 정보를 가져왔을 때만 데이터 요청
+    if (!isLoading && center.latitude && center.longitude) {
+      fetchData();
+    }
+  }, [isLoading, center]); // isLoading 또는 center가 변경될 때마다 실행
+
+  // 현재 위치
   useEffect(() => {
     (async () => {
       try {
@@ -76,77 +98,82 @@ export default function PharmacyPage() {
     })();
   }, []);
 
-  // 지도 로딩 완료 → 초기 데이터 조회 + 화면 맞춤
-  const handleMapLoaded = async () => {
+  // 초기 마커
+  const handleMapLoaded = useCallback(async () => {
     try {
-      const data = await fetchHospitalsNearMock(center.latitude, center.longitude, 2000);
+      const data = await fetchHospitalsNearMock(center.latitude, center.longitude, 1200);
       setMarkers(data);
-      setTimeout(() => safeFitToMarkers(), 50);
-    } catch (e) {
-      console.warn(e);
-    }
-  };
+      setTimeout(() => safeFitToMarkers(), 80);
+    } catch (e) { console.warn(e); }
+    setMapMounted(true); // ✅ 지도 준비 완료
+  }, [center.latitude, center.longitude]);
 
-  // 디바운스된 조회
+  // 디바운스 조회
   const debouncedFetch = useMemo(
     () => debounce(async (region: Region) => {
-      // 의미있는 이동/줌만 조회: 이전 fetch 지점과 비교
       const prev = lastFetchedRef.current;
-      const zoom = region.latitudeDelta; // 간이 줌 지표
+      const zoom = region.latitudeDelta;
       const lat = region.latitude, lng = region.longitude;
 
       if (prev) {
-        // 중심 이동 150m 미만 & 줌 변화 미미하면 무시
-        const moved = haversineMeters(
-          { lat: prev.lat, lng: prev.lng },
-          { lat, lng }
-        );
+        const moved = haversine({ lat: prev.lat, lng: prev.lng }, { lat, lng });
         const zoomDiff = Math.abs(prev.zoom - zoom);
         if (moved < 150 && zoomDiff < 0.005) return;
       }
+      if (region.latitudeDelta > 0.5 || region.longitudeDelta > 0.5) return;
 
-      // 줌에 따라 반경 가변
-      if (region.latitudeDelta > 0.5 || region.longitudeDelta > 0.5) return; // 전국 단위 방지
       const approxKm = Math.max(0.2, region.latitudeDelta * 111 / 2);
-      const radiusMeters = Math.round(approxKm * 1000);
-
-      const data = await fetchHospitalsNearMock(lat, lng, radiusMeters);
+      const data = await fetchHospitalsNearMock(lat, lng, Math.round(approxKm * 1000));
       setMarkers(data);
       lastFetchedRef.current = { lat, lng, zoom };
     }, 350),
     []
   );
 
-  // onRegionChangeComplete 핸들러: 루프 차단 + 제스처 필터 + 최소 변화 체크
   const handleRegionChangeDone = (region: Region, details?: { isGesture?: boolean }) => {
-    // 프로그램 이동이면 딱 한 번만 무시
-    if (ignoreNextRef.current) {
-      ignoreNextRef.current = false;
-      lastRegionRef.current = region;
-      return;
-    }
-    // 사용자 제스처가 아닌 경우 스킵 (platform/버전에 따라 undefined일 수 있음)
-    if (details?.isGesture === false) {
-      lastRegionRef.current = region;
-      return;
-    }
-    // 이전 region과 의미있는 변화가 없으면 무시(부동소수 흔들림 방지)
+    if (ignoreNextRef.current) { ignoreNextRef.current = false; lastRegionRef.current = region; return; }
+    if (details?.isGesture === false) { lastRegionRef.current = region; return; }
     const prev = lastRegionRef.current;
     if (prev) {
-      const moved = haversineMeters(
-        { lat: prev.latitude, lng: prev.longitude },
-        { lat: region.latitude, lng: region.longitude }
-      );
+      const moved = haversine({ lat: prev.latitude, lng: prev.longitude }, { lat: region.latitude, lng: region.longitude });
       const zoomDiff = Math.abs(prev.latitudeDelta - region.latitudeDelta);
-      if (moved < 50 && zoomDiff < 0.002) {
-        lastRegionRef.current = region;
-        return;
-      }
+      if (moved < 50 && zoomDiff < 0.002) { lastRegionRef.current = region; return; }
     }
-
     lastRegionRef.current = region;
     debouncedFetch(region);
   };
+
+  // ✅ 준비 상태가 되었을 때만 1회 present
+  // ribbonHeight > 0 조건 제거
+  const ready = !isLoading && mapMounted;
+
+  useEffect(() => {
+    if (!isFocused) return;
+    if (!ready) return;
+    if (presentedRef.current) return;
+
+    // 레이아웃/애니메이션 큐가 비고 나서 열기(플리커/레이스 방지)
+    const task = InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        sheetRef.current?.present();
+        presentedRef.current = true;
+      });
+    });
+
+    return () => {
+      task.cancel();
+    };
+  }, [isFocused, ready]);
+
+  // 화면 이탈 시 정리 및 다음 진입에서 다시 열릴 수 있게 플래그 리셋
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        sheetRef.current?.dismiss();
+        presentedRef.current = false;
+      };
+    }, [])
+  );
 
   if (isLoading) {
     return (
@@ -157,6 +184,15 @@ export default function PharmacyPage() {
     );
   }
 
+  const sampleAlert = {
+    title: '국가재난문자',
+    region: '서울특별시',
+    time: '2025-09-14 20:10',
+    body: '현재 강풍주의보가 발령되었습니다. 외출 시 주의하시고, 간판 등 낙하물에 유의하세요.',
+  };
+
+  const bottomInset = tabBarHeight + ribbonHeight;
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View style={{ flex: 1 }}>
@@ -166,10 +202,44 @@ export default function PharmacyPage() {
           longitude={center.longitude}
           markers={markers}
           onMapLoaded={handleMapLoaded}
-          onRegionChangeDone={handleRegionChangeDone} // (region, details) 받음
+          onRegionChangeDone={handleRegionChangeDone}
           className="flex-1"
         />
       </View>
+
+      {ready && (
+        <BottomSheetModal
+          ref={sheetRef}
+          snapPoints={snapPoints}
+          enablePanDownToClose={false}
+          bottomInset={tabBarHeight + ribbonHeight}
+          backgroundStyle={{
+            borderTopLeftRadius: 18,
+            borderTopRightRadius: 18,
+            backgroundColor: 'white',
+          }}
+          handleIndicatorStyle={{ width: 44, height: 6, borderRadius: 4 }}
+          onChange={(i) => console.log('sheet index:', i)}
+        >
+          {/* 요청하신 바텀시트 콘텐츠 영역을 BottomSheetView 안에 추가합니다. */}
+          <BottomSheetView className="flex flex-col p-4 gap-8">
+            {/* 안전 문자 내용 칸 */}
+            <SafetyAlertMessage />
+
+            <View className="w-full p-[10px] gap-3 elevation-md bg-[#E6EEFF] rounded-2xl">
+              {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
+              <View className="w-full p-[10px] gap-3 elevation-md bg-[#E6EEFF] rounded-2xl">
+                {/* weatherData가 있으면 WeatherInfo 컴포넌트 렌더링, 없으면 로딩 인디케이터 렌더링 */}
+                {weatherData ? <WeatherInfo data={weatherData} /> : <ActivityIndicator size="small" />}
+              </View>
+            </View>
+
+            <Text className="text-center text-gray-700">
+              바텀시트 콘텐츠 영역 ddd
+            </Text>
+          </BottomSheetView>
+        </BottomSheetModal>
+      )}
     </SafeAreaView>
   );
 }
