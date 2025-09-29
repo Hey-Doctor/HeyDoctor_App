@@ -1,6 +1,6 @@
 // screens/Location/LocationPage.tsx
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { View, Text, ActivityIndicator, Pressable, InteractionManager } from 'react-native';
+import { View, Text, ActivityIndicator, Pressable, InteractionManager, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Region } from 'react-native-maps';
 import { useFocusEffect, useIsFocused } from '@react-navigation/native';
@@ -11,6 +11,7 @@ import * as Location from 'expo-location';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import SafetyAlertMessage from '../Location/Location_components/SafetyAlertMessage';
 import WeatherInfo from '~/components/WeatherInfo';
+import DisasterAlert from '~/components/DisasterAlert';
 
 /** ───────── 유틸 ───────── **/
 function debounce<T extends (...args:any)=>any>(fn:T, ms:number) {
@@ -63,21 +64,38 @@ export default function PharmacyPage() {
 
   const safeFitToMarkers = () => { ignoreNextRef.current = true; mapRef.current?.fitToMarkers(); };
 
+  // 날씨
   const [weatherData, setWeatherData] = useState(null);
+
+  // 재난문자
+  const [safetyAlertData, setSafetyAlertData] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // 1. 현재 위치 정보(center)를 활용하여 URL 생성
-        const url = `http://192.168.219.144:8080/api/weather?lat=37.5665&lon=126.9780`;
+        const url = `http://172.20.10.2:8080/api/weather?lat=37.5665&lon=126.9780`;
 
         const response = await fetch(url);
         const json = await response.json();
         setWeatherData(json);
       } catch (error) {
+        console.log("날씨 데이터 오류");
       }
     };
-    
+
+    // 안전 문자 데이터 가져오기
+  const fetchSafetyAlertData = async () => {
+    try {
+      const url = `http://172.20.10.2:8080/api/disaster-alert?lat=37.5665&lon=126.9780`; // 이 URL에서 데이터를 요청합니다.
+      const response = await fetch(url);
+      const json = await response.json();
+      setSafetyAlertData(json); // 요청받은 데이터를 safetyAlertData에 저장합니다.
+    } catch (error) {
+      console.error("안전 문자 데이터 로딩 실패:", error);
+    }
+  };
+      
     // 2. 위치 정보를 가져왔을 때만 데이터 요청
     if (!isLoading && center.latitude && center.longitude) {
       fetchData();
@@ -224,7 +242,14 @@ export default function PharmacyPage() {
           {/* 요청하신 바텀시트 콘텐츠 영역을 BottomSheetView 안에 추가합니다. */}
           <BottomSheetView className="flex flex-col p-4 gap-8">
             {/* 안전 문자 내용 칸 */}
-            <SafetyAlertMessage />
+            <View className='w-full p-[10px] gap-3 elevation-md bg-[#F1FAF1] rounded-2xl'>
+            {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
+                <View className='flex flex-row items-center gap-3'>
+                    <Image source={require('~/assets/screens/LocationPageAssets/informButton.png')} />
+                    <Text className='text-xl font-semibold'>안전 문자 내용</Text>
+                </View>    
+                <DisasterAlert data={safetyAlertData}/>
+            </View> 
 
             <View className="w-full p-[10px] gap-3 elevation-md bg-[#E6EEFF] rounded-2xl">
               {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
@@ -233,10 +258,6 @@ export default function PharmacyPage() {
                 {weatherData ? <WeatherInfo data={weatherData} /> : <ActivityIndicator size="small" />}
               </View>
             </View>
-
-            <Text className="text-center text-gray-700">
-              바텀시트 콘텐츠 영역 ddd
-            </Text>
           </BottomSheetView>
         </BottomSheetModal>
       )}
