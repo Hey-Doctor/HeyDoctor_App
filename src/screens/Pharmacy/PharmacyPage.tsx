@@ -9,9 +9,9 @@ import { subscribeRibbonHeight, getRibbonHeight } from '~/utils/ribbonHeight';
 import NativeMap, { NativeMapHandle, MapMarker } from '~/components/NativeMap';
 import * as Location from 'expo-location';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import SafetyAlertMessage from '../Location/Location_components/SafetyAlertMessage';
-import WeatherInfo from '~/components/WeatherInfo';
 import DisasterAlert from '~/components/DisasterAlert';
+import WeatherInfo from '~/components/WeatherInfo';
+import HospitalInfo from '~/components/HospitalInfo';
 
 /** ───────── 유틸 ───────── **/
 function debounce<T extends (...args:any)=>any>(fn:T, ms:number) {
@@ -61,8 +61,30 @@ export default function PharmacyPage() {
   const ignoreNextRef = useRef(false);
   const lastRegionRef = useRef<Region | null>(null);
   const lastFetchedRef = useRef<{lat:number; lng:number; zoom:number} | null>(null);
+  
+  // 마커 클릭 상태를 추적하기 위한 ref
+  const isMarkerPressedRef = useRef(false);
 
   const safeFitToMarkers = () => { ignoreNextRef.current = true; mapRef.current?.fitToMarkers(); };
+
+  // 마커 클릭 시 병원 정보를 저장할 상태
+  const [selectedHospital, setSelectedHospital] = useState<MapMarker | null>(null);
+
+  // 마커 클릭 시 병원 정보를 저장
+  const handleMarkerPress = (marker: MapMarker) => {
+    isMarkerPressedRef.current = true; // 마커가 클릭되었음을 표시
+    setSelectedHospital(marker);
+    sheetRef.current?.snapToIndex(1);
+  };
+  
+  // 지도 빈 공간 클릭 시 병원 정보 초기화
+  const handleMapPress = () => {
+    if (isMarkerPressedRef.current) { // 마커 클릭 직후라면 무시
+      isMarkerPressedRef.current = false;
+      return;
+    }
+    setSelectedHospital(null);
+  };
 
   // 날씨
   const [weatherData, setWeatherData] = useState(null);
@@ -71,11 +93,9 @@ export default function PharmacyPage() {
   const [safetyAlertData, setSafetyAlertData] = useState(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchWeatherData = async () => {
       try {
-        // 1. 현재 위치 정보(center)를 활용하여 URL 생성
-        const url = `http://172.20.10.2:8080/api/weather?lat=37.5665&lon=126.9780`;
-
+        const url = `http://172.20.10.2:8080/api/weather?lat=${center.latitude}&lon=${center.longitude}`;
         const response = await fetch(url);
         const json = await response.json();
         setWeatherData(json);
@@ -85,20 +105,21 @@ export default function PharmacyPage() {
     };
 
     // 안전 문자 데이터 가져오기
-  const fetchSafetyAlertData = async () => {
-    try {
-      const url = `http://172.20.10.2:8080/api/disaster-alert?lat=37.5665&lon=126.9780`; // 이 URL에서 데이터를 요청합니다.
-      const response = await fetch(url);
-      const json = await response.json();
-      setSafetyAlertData(json); // 요청받은 데이터를 safetyAlertData에 저장합니다.
-    } catch (error) {
-      console.error("안전 문자 데이터 로딩 실패:", error);
-    }
-  };
+    const fetchSafetyAlertData = async () => {
+      try {
+        const url = `http://172.20.10.2:8080/api/disaster-alert?lat=${center.latitude}&lon=${center.longitude}`;
+        const response = await fetch(url);
+        const json = await response.json();
+        setSafetyAlertData(json);
+      } catch (error) {
+        console.error("안전 문자 데이터 로딩 실패:", error);
+      }
+    };
       
-    // 2. 위치 정보를 가져왔을 때만 데이터 요청
+    // 위치 정보를 가져왔을 때만 데이터 요청
     if (!isLoading && center.latitude && center.longitude) {
-      fetchData();
+      fetchWeatherData();
+      fetchSafetyAlertData();
     }
   }, [isLoading, center]); // isLoading 또는 center가 변경될 때마다 실행
 
@@ -135,10 +156,14 @@ export default function PharmacyPage() {
 
       if (prev) {
         const moved = haversine({ lat: prev.lat, lng: prev.lng }, { lat, lng });
-        const zoomDiff = Math.abs(prev.zoom - zoom);
-        if (moved < 150 && zoomDiff < 0.005) return;
+        const zoomDiff = Math.abs(prev.lat - region.latitudeDelta);
+        if (moved < 50 && zoomDiff < 0.002) {
+          return;
+        }
       }
-      if (region.latitudeDelta > 0.5 || region.longitudeDelta > 0.5) return;
+      if (region.latitudeDelta > 0.5 || region.longitudeDelta > 0.5) {
+        return;
+      }
 
       const approxKm = Math.max(0.2, region.latitudeDelta * 111 / 2);
       const data = await fetchHospitalsNearMock(lat, lng, Math.round(approxKm * 1000));
@@ -149,28 +174,41 @@ export default function PharmacyPage() {
   );
 
   const handleRegionChangeDone = (region: Region, details?: { isGesture?: boolean }) => {
-    if (ignoreNextRef.current) { ignoreNextRef.current = false; lastRegionRef.current = region; return; }
-    if (details?.isGesture === false) { lastRegionRef.current = region; return; }
+    if (ignoreNextRef.current) {
+      ignoreNextRef.current = false;
+      lastRegionRef.current = region;
+      return;
+    }
+    if (details?.isGesture === false) {
+      lastRegionRef.current = region;
+      return;
+    }
     const prev = lastRegionRef.current;
     if (prev) {
       const moved = haversine({ lat: prev.latitude, lng: prev.longitude }, { lat: region.latitude, lng: region.longitude });
       const zoomDiff = Math.abs(prev.latitudeDelta - region.latitudeDelta);
-      if (moved < 50 && zoomDiff < 0.002) { lastRegionRef.current = region; return; }
+      if (moved < 50 && zoomDiff < 0.002) {
+        lastRegionRef.current = region;
+        return;
+      }
     }
     lastRegionRef.current = region;
     debouncedFetch(region);
   };
 
   // ✅ 준비 상태가 되었을 때만 1회 present
-  // ribbonHeight > 0 조건 제거
   const ready = !isLoading && mapMounted;
 
   useEffect(() => {
-    if (!isFocused) return;
-    if (!ready) return;
-    if (presentedRef.current) return;
-
-    // 레이아웃/애니메이션 큐가 비고 나서 열기(플리커/레이스 방지)
+    if (!isFocused) {
+      return;
+    }
+    if (!ready) {
+      return;
+    }
+    if (presentedRef.current) {
+      return;
+    }
     const task = InteractionManager.runAfterInteractions(() => {
       requestAnimationFrame(() => {
         sheetRef.current?.present();
@@ -221,6 +259,8 @@ export default function PharmacyPage() {
           markers={markers}
           onMapLoaded={handleMapLoaded}
           onRegionChangeDone={handleRegionChangeDone}
+          onMarkerPress={handleMarkerPress}
+          onPress={handleMapPress}
           className="flex-1"
         />
       </View>
@@ -239,24 +279,28 @@ export default function PharmacyPage() {
           handleIndicatorStyle={{ width: 44, height: 6, borderRadius: 4 }}
           onChange={(i) => console.log('sheet index:', i)}
         >
-          {/* 요청하신 바텀시트 콘텐츠 영역을 BottomSheetView 안에 추가합니다. */}
           <BottomSheetView className="flex flex-col p-4 gap-8">
-            {/* 안전 문자 내용 칸 */}
+            {/* 안전 문자 섹션 */}
             <View className='w-full p-[10px] gap-3 elevation-md bg-[#F1FAF1] rounded-2xl'>
-            {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
                 <View className='flex flex-row items-center gap-3'>
                     <Image source={require('~/assets/screens/LocationPageAssets/informButton.png')} />
-                    <Text className='text-xl font-semibold'>안전 문자 내용</Text>
+                    <Text className='text-xl font-semibold'>안전 문자</Text>
                 </View>    
-                <DisasterAlert data={safetyAlertData}/>
+                {safetyAlertData ? <DisasterAlert data={safetyAlertData}/> : <ActivityIndicator size="small" />}
             </View> 
 
+            {/* 날씨/병원 정보 섹션 */}
             <View className="w-full p-[10px] gap-3 elevation-md bg-[#E6EEFF] rounded-2xl">
-              {/* 안전 문자 내용 버튼이랑 텍스트 = 제목 */}
-              <View className="w-full p-[10px] gap-3 elevation-md bg-[#E6EEFF] rounded-2xl">
-                {/* weatherData가 있으면 WeatherInfo 컴포넌트 렌더링, 없으면 로딩 인디케이터 렌더링 */}
-                {weatherData ? <WeatherInfo data={weatherData} /> : <ActivityIndicator size="small" />}
+              <View className="flex flex-row items-center gap-3">
+                <Text className="text-xl font-semibold">
+                  {selectedHospital ? '선택된 병원 정보' : '현재 날씨'}
+                </Text>
               </View>
+              {selectedHospital ? (
+                <HospitalInfo data={selectedHospital} />
+              ) : (
+                weatherData ? <WeatherInfo data={weatherData} /> : <ActivityIndicator size="small" />
+              )}
             </View>
           </BottomSheetView>
         </BottomSheetModal>

@@ -16,6 +16,9 @@ export type MapMarker = {
 
 type RegionChangeDetails = { isGesture?: boolean };
 
+// onPress 이벤트 타입을 정의합니다.
+type OnPressType = MapViewProps['onPress'];
+
 type Props = {
   latitude: number;           // 초기 중심 lat
   longitude: number;          // 초기 중심 lng
@@ -24,6 +27,7 @@ type Props = {
   markers?: MapMarker[];      // 병원/약국 등 마커들
   onMarkerPress?: (m: MapMarker) => void;
   onRegionChangeDone?: (r: Region, details?: RegionChangeDetails) => void;
+  onPress?: OnPressType; // ✅ onPress 속성 추가
 };
 
 export type NativeMapHandle = {
@@ -33,7 +37,7 @@ export type NativeMapHandle = {
 };
 
 const NativeMap = forwardRef<NativeMapHandle, Props>(function NativeMap(
-  { latitude, longitude, className, onMapLoaded, markers = [], onMarkerPress, onRegionChangeDone },
+  { latitude, longitude, className, onMapLoaded, markers = [], onMarkerPress, onRegionChangeDone, onPress }, // ✅ onPress 속성 추가
   ref
 ) {
   const mapRef = useRef<MapView>(null);
@@ -87,6 +91,7 @@ const NativeMap = forwardRef<NativeMapHandle, Props>(function NativeMap(
         initialRegion={initialRegion}
         showsUserLocation
         onRegionChangeComplete={handleRegionChangeComplete}
+        onPress={onPress} // ✅ onPress 속성 추가
       >
         {markers.map(m => (
           <Marker
